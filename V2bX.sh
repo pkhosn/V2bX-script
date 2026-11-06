@@ -446,6 +446,20 @@ generate_config_file() {
     run_node_wizard --replace
 }
 
+configure_dns_unlock() {
+    local binary=/usr/local/V2bX/V2bX
+    if ! "$binary" dns-unlock --help >/dev/null 2>&1; then
+        echo -e "${red}当前二进制不支持 DNS 解锁菜单，请先更新 V2bX。${plain}"
+        return 1
+    fi
+    "$binary" dns-unlock --config /etc/V2bX/config.json
+    local result=$?
+    if [[ $# == 0 ]]; then
+        before_show_menu
+    fi
+    return "$result"
+}
+
 open_ports() {
     systemctl stop firewalld.service 2>/dev/null
     systemctl disable firewalld.service 2>/dev/null
@@ -476,6 +490,7 @@ show_usage() {
     echo "V2bX x25519       - 生成 x25519 密钥"
     echo "V2bX generate     - 重新生成 V2bX 配置（替换全部节点）"
     echo "V2bX add          - 追加节点（保留现有配置）"
+    echo "V2bX dns-unlock   - 流媒体 DNS 解锁"
     echo "V2bX update       - 更新 V2bX"
     echo "V2bX update x.x.x - 安装 V2bX 指定版本"
     echo "V2bX install      - 安装 V2bX"
@@ -509,12 +524,13 @@ show_menu() {
   ${green}14.${plain} 升级 V2bX 维护脚本
   ${green}15.${plain} 重新生成 V2bX 配置（替换全部节点）
   ${green}16.${plain} 放行 VPS 的所有网络端口
-  ${green}17.${plain} 退出脚本
-  ${green}18.${plain} 追加节点（保留现有配置）
+  ${green}17.${plain} 追加节点（保留现有配置）
+  ${green}18.${plain} 流媒体 DNS 解锁
+  ${green}19.${plain} 退出脚本
  "
- #后续更新可加入上方字符串中
+ # 新功能必须插在“退出脚本”之前；退出项始终排列最后。
     show_status
-    echo && read -rp "请输入选择 [0-18]: " num
+    echo && read -rp "请输入选择 [0-19]: " num
 
     case "${num}" in
         0) config ;;
@@ -534,9 +550,10 @@ show_menu() {
         14) update_shell ;;
         15) generate_config_file ;;
         16) open_ports ;;
-        17) exit ;;
-        18) check_install && add_node_config ;;
-        *) echo -e "${red}请输入正确的数字 [0-18]${plain}" ;;
+        17) check_install && add_node_config ;;
+        18) check_install && configure_dns_unlock ;;
+        19) exit ;;
+        *) echo -e "${red}请输入正确的数字 [0-19]${plain}" ;;
     esac
 }
 
@@ -554,6 +571,7 @@ if [[ $# > 0 ]]; then
         "config") config $* ;;
         "generate") generate_config_file ;;
         "add") check_install 0 && add_node_config ;;
+        "dns-unlock") check_install 0 && configure_dns_unlock 0 ;;
         "install") check_uninstall 0 && install 0 ;;
         "uninstall") check_install 0 && uninstall 0 ;;
         "x25519") check_install 0 && generate_x25519_key 0 ;;
