@@ -212,8 +212,17 @@ EOF
         echo -e "${green}V2bX ${last_version}${plain} 安装完成，已设置开机自启"
     fi
 
+    # Install the ordinary sing configuration before starting existing nodes.
+    # Preserve custom DNS/routing on upgrades.
+    if [[ ! -f /etc/V2bX/sing_origin.json ]]; then
+        cp sing_origin.json /etc/V2bX/ || return 1
+    fi
+
     if [[ ! -f /etc/V2bX/config.json ]]; then
-        cp config.json /etc/V2bX/
+        # Packaged config.json is an example, not a configured panel node.
+        # Start the wizard with no nodes/cores so HY-only installs do not
+        # inherit a localhost Shadowsocks node or an unused sing core.
+        (umask 077; printf '%s\n' '{"Log":{"Level":"info"},"Cores":[],"Nodes":[]}' > /etc/V2bX/config.json) || return 1
         echo -e ""
         echo -e "全新安装，请先参看教程：https://v2bx.v-50.me/，配置必要的内容"
         first_install=true
