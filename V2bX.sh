@@ -426,8 +426,8 @@ show_V2bX_version() {
 # certificate preparation and atomic updates use the same implementation.
 run_node_wizard() {
     local binary=/usr/local/V2bX/V2bX
-    if ! "$binary" node-add --help 2>/dev/null | grep -q -- '--replace'; then
-        echo "当前 V2bX 二进制不支持节点追加，请先更新至包含 node-add 的版本。"
+    if ! "$binary" node-add --help 2>/dev/null | grep -q -- 'HY2 端口跳跃'; then
+        echo "当前 V2bX 二进制不支持整合端口跳跃的节点向导，请先更新 V2bX。"
         return 1
     fi
     if "$binary" node-add --config /etc/V2bX/config.json "$@"; then
@@ -453,20 +453,6 @@ configure_dns_unlock() {
         return 1
     fi
     "$binary" dns-unlock --config /etc/V2bX/config.json
-    local result=$?
-    if [[ $# == 0 ]]; then
-        before_show_menu
-    fi
-    return "$result"
-}
-
-configure_hy_hop() {
-    local binary=/usr/local/V2bX/V2bX
-    if ! "$binary" hy-hop --help >/dev/null 2>&1; then
-        echo -e "${red}当前二进制不支持 HY2 端口跳跃，请先更新 V2bX。${plain}"
-        return 1
-    fi
-    "$binary" hy-hop
     local result=$?
     if [[ $# == 0 ]]; then
         before_show_menu
@@ -520,7 +506,6 @@ show_usage() {
     echo "V2bX add          - 追加节点（保留现有配置）"
     echo "V2bX dns-unlock   - 流媒体 DNS 解锁"
     echo "V2bX tunnel       - XHTTP Cloudflare Tunnel"
-    echo "V2bX hy-hop       - HY2 端口跳跃"
     echo "V2bX update       - 更新 V2bX"
     echo "V2bX update x.x.x - 安装 V2bX 指定版本"
     echo "V2bX install      - 安装 V2bX"
@@ -556,13 +541,12 @@ show_menu() {
   ${green}16.${plain} 放行 VPS 的所有网络端口
   ${green}17.${plain} 追加节点（保留现有配置）
   ${green}18.${plain} 流媒体 DNS 解锁
-  ${green}19.${plain} HY2 端口跳跃
-  ${green}20.${plain} XHTTP Cloudflare Tunnel
-  ${green}21.${plain} 退出脚本
+  ${green}19.${plain} XHTTP Cloudflare Tunnel
+  ${green}20.${plain} 退出脚本
  "
  # 新功能必须插在“退出脚本”之前；退出项始终排列最后。
     show_status
-    echo && read -rp "请输入选择 [0-21]: " num
+    echo && read -rp "请输入选择 [0-20]: " num
 
     case "${num}" in
         0) config ;;
@@ -584,10 +568,9 @@ show_menu() {
         16) open_ports ;;
         17) check_install && add_node_config ;;
         18) check_install && configure_dns_unlock ;;
-        19) check_install && configure_hy_hop ;;
-        20) check_install && configure_tunnel ;;
-        21) exit ;;
-        *) echo -e "${red}请输入正确的数字 [0-21]${plain}" ;;
+        19) check_install && configure_tunnel ;;
+        20) exit ;;
+        *) echo -e "${red}请输入正确的数字 [0-20]${plain}" ;;
     esac
 }
 
@@ -607,7 +590,6 @@ if [[ $# > 0 ]]; then
         "add") check_install 0 && add_node_config ;;
         "dns-unlock") check_install 0 && configure_dns_unlock 0 ;;
         "tunnel") check_install 0 && configure_tunnel 0 ;;
-        "hy-hop") check_install 0 && configure_hy_hop 0 ;;
         "install") check_uninstall 0 && install 0 ;;
         "uninstall") check_install 0 && uninstall 0 ;;
         "x25519") check_install 0 && generate_x25519_key 0 ;;
